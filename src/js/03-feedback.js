@@ -1,41 +1,37 @@
 import throttle from 'lodash.throttle';
 
-const feedbackForm = document.querySelector('.feedback-form');
-const emailInput = feedbackForm.querySelector('input[name="email"]');
-const messageInput = feedbackForm.querySelector('textarea[name="message"]');
+const STORAGE_KEY = 'feedback-form-state';
 
-const saveFormDataToLocalStorage = throttle(function () {
-  const formData = {
-    email: emailInput.value,
-    message: messageInput.value,
-  };
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
-}, 500); 
+const form = document.querySelector('.feedback-form');
 
-document.addEventListener('DOMContentLoaded', function () {
-  const savedFormData = localStorage.getItem('feedback-form-state');
+form.addEventListener('input', throttle(onInputData, 500));
+form.addEventListener('submit', onFormSubmit);
 
-  if (savedFormData) {
-    const formData = JSON.parse(savedFormData);
-    emailInput.value = formData.email;
-    messageInput.value = formData.message;
+let dataForm = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+const { email, message } = form.elements;
+reloadPage();
+
+function onInputData(event) {
+  dataForm = { email: email.value, message: message.value };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dataForm));
+}
+
+function reloadPage() {
+  if (dataForm) {
+    email.value = dataForm.email || '';
+    message.value = dataForm.message || '';
   }
-});
+}
 
-feedbackForm.addEventListener('submit', function (e) {
-  e.preventDefault();
+function onFormSubmit(event) {
+  event.preventDefault();
+  console.log({ email: email.value, message: message.value });
 
-  const formData = {
-    email: emailInput.value,
-    message: messageInput.value,
-  };
+  if (email.value === '' || message.value === '') {
+    return alert(`Please fill in all required fields!`);
+  }
 
-  console.log(formData);
-
-  localStorage.removeItem('feedback-form-state');
-  emailInput.value = '';
-  messageInput.value = '';
-});
-
-emailInput.addEventListener('input', saveFormDataToLocalStorage);
-messageInput.addEventListener('input', saveFormDataToLocalStorage);
+  localStorage.removeItem(STORAGE_KEY);
+  event.currentTarget.reset();
+  dataForm = {};
+}
